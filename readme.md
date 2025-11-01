@@ -2,7 +2,7 @@
 
 这是一个为个人作品集和博客前端应用提供数据支持的 RESTful API。它使用 Node.js, Express, และ MongoDB 构建，并实现了完整的用户认证和内容管理功能。
 
-**线上 API 地址:** `[部署成功后，请将您的线上 URL 粘贴到这里]`
+**线上 API 地址:** `https://lishaners-portfolio-blog-api.onrender.com`
 
 ---
 
@@ -76,8 +76,8 @@
 
 1.  **克隆仓库**
     ```bash
-    git clone [您的 GitHub 仓库 URL]
-    cd [您的项目文件夹名]
+    git clone https://github.com/lishaner/Portfolio-blog-api
+    cd Portfolio-blog-api
     ```
 
 2.  **安装依赖**
