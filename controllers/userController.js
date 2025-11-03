@@ -1,5 +1,3 @@
-// controllers/userController.js
-
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
@@ -26,6 +24,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
         throw new Error('该邮箱已被注册');
     }
 
+    // 创建用户时，role 字段会使用 userModel.js 中定义的默认值 'user'
     const user = await User.create({
         username,
         email,
@@ -33,16 +32,16 @@ exports.registerUser = asyncHandler(async (req, res) => {
     });
 
     if (user) {
-        // --- 关键修改：返回与前端匹配的结构 ---
+        // 返回 Token 和用户信息，以便前端直接登录
         res.status(201).json({
             token: generateToken(user._id),
             user: {
                 id: user._id,
-                name: user.username, // 前端期望 'name' 字段
+                name: user.username,
                 email: user.email,
+                role: user.role, // 新注册用户的 role 是 'user'
             },
         });
-        // ---------------------------------
     } else {
         res.status(400);
         throw new Error('无效的用户数据');
@@ -57,29 +56,29 @@ exports.registerUser = asyncHandler(async (req, res) => {
 exports.loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
+    // 1. 检查邮箱和密码是否都已提供
     if (!email || !password) {
         res.status(400);
         throw new Error('请输入邮箱和密码');
     }
 
-    // 确保在模型定义中没有默认不选择 password，如果 Mongoose 实例方法可用则无需 select
-    const user = await User.findOne({ email });
+    // 2. 根据邮箱查找用户，并使用 .select('+password') 强制返回被隐藏的密码字段
+    const user = await User.findOne({ email }).select('+password');
 
-    // --- 关键修改：确保密码比对逻辑正确 ---
-    // 您的代码中使用了 user.matchPassword，这里假设它在 userModel.js 中定义正确
-    // 如果没有定义，也可以直接使用 bcrypt.compare
+    // 3. 检查用户是否存在，并且密码是否匹配
     if (user && (await user.matchPassword(password))) {
-        // --- 关键修改：返回与前端匹配的结构 ---
+        // 如果匹配成功，返回 Token 和完整的用户信息 (包括 role)
         res.status(200).json({
             token: generateToken(user._id),
             user: {
                 id: user._id,
-                name: user.username, // 前端期望 'name' 字段
+                name: user.username,
                 email: user.email,
+                role: user.role, // 将用户的角色信息返回给前端
             },
         });
-        // ---------------------------------
     } else {
+        // 如果用户不存在或密码错误，返回 401 Unauthorized
         res.status(401);
         throw new Error('无效的邮箱或密码');
     }
