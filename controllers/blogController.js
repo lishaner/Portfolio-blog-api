@@ -11,7 +11,7 @@ const getBlogPosts = asyncHandler(async (req, res) => {
 
 // @desc    创建新的博客文章
 // @route   POST /api/blog
-// @access  Protected
+// @access  Protected/Admin
 const createBlogPost = asyncHandler(async (req, res) => {
   const { title, content } = req.body;
 
@@ -45,7 +45,7 @@ const getBlogPostById = asyncHandler(async (req, res) => {
 
 // @desc    更新一篇博客文章
 // @route   PUT /api/blog/:id
-// @access  Protected/Authorized
+// @access  Protected/Admin
 const updateBlogPost = asyncHandler(async (req, res) => {
   const { title, content } = req.body;
   const post = await BlogPost.findById(req.params.id);
@@ -55,9 +55,12 @@ const updateBlogPost = asyncHandler(async (req, res) => {
     throw new Error('文章未找到');
   }
 
-  // --- 关键授权检查 ---
-  if (post.author.toString() !== req.user._id.toString()) {
-    res.status(401); // Unauthorized
+  // 授权检查：当前用户必须是文章作者或管理员
+  const isAdmin = req.user.role === 'admin';
+  const isAuthor = post.author.toString() === req.user._id.toString();
+
+  if (!isAdmin && !isAuthor) {
+    res.status(403); // 403 Forbidden - 已知身份，但无权限
     throw new Error('用户无权限更新此文章');
   }
 
@@ -70,7 +73,7 @@ const updateBlogPost = asyncHandler(async (req, res) => {
 
 // @desc    删除一篇博客文章
 // @route   DELETE /api/blog/:id
-// @access  Protected/Authorized
+// @access  Protected/Admin
 const deleteBlogPost = asyncHandler(async (req, res) => {
   const post = await BlogPost.findById(req.params.id);
 
@@ -79,13 +82,16 @@ const deleteBlogPost = asyncHandler(async (req, res) => {
     throw new Error('文章未找到');
   }
 
-  // --- 关键授权检查 ---
-  if (post.author.toString() !== req.user._id.toString()) {
-    res.status(401); // Unauthorized
+  // 授权检查：当前用户必须是文章作者或管理员
+  const isAdmin = req.user.role === 'admin';
+  const isAuthor = post.author.toString() === req.user._id.toString();
+
+  if (!isAdmin && !isAuthor) {
+    res.status(403); // 403 Forbidden - 已知身份，但无权限
     throw new Error('用户无权限删除此文章');
   }
 
-  await BlogPost.deleteOne({ _id: post._id });
+  await post.deleteOne();
 
   res.status(200).json({ message: '文章已成功删除' });
 });
