@@ -1,15 +1,14 @@
 // models/userModel.js
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-    // --- 修改开始 ---
     username: {
         type: String,
         required: [true, 'Please enter a username'],
-        unique: true // 添加了 unique 属性以满足项目要求
+        unique: true
     },
-    // --- 修改结束 ---
     email: {
         type: String,
         required: [true, 'Please enter an email'],
@@ -23,10 +22,20 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please enter a password'],
         minlength: 6,
-        select: false, // 默认情况下，查询用户时不会返回密码
+        select: false,
     },
+
+
+    role: {
+      type: String,
+      required: true,
+      enum: ['user', 'admin'], // 'enum' 限制了 role 字段只能是 'user' 或 'admin' 这两个值
+      default: 'user'         // 'default' 确保了新注册的用户默认为普通 'user'
+    }
+
+
 }, {
-    timestamps: true // 自动添加 createdAt 和 updatedAt 字段
+    timestamps: true
 });
 
 // 在保存到数据库之前，对密码进行哈希处理 (这部分代码非常完美，无需修改)
