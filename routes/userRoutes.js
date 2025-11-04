@@ -1,15 +1,16 @@
-// routes/userRoutes.js
+/**
+ * @file userRoutes.js
+ * @description 定义用户认证相关的 API 路由。
+ * Base path: /api/users
+ */
 const express = require('express');
 const router = express.Router();
-
-// 从控制器中导入相应的处理函数
 const { registerUser, loginUser } = require('../controllers/userController');
 
-// 设置路由
-// POST /api/users/register
+// POST /api/users/register - 用户注册 (公开)
 router.post('/register', registerUser);
 
-// POST /api/users/login
+// POST /api/users/login - 用户登录 (公开)
 router.post('/login', loginUser);
 
 module.exports = router;

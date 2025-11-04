@@ -1,14 +1,20 @@
-// routes/commentRoutes.js
+/**
+ * @file commentRoutes.js
+ * @description 定义与评论相关的 API 路由。
+ * 这个路由是 blogRoutes 的子路由。
+ * Base path: /api/blog/:postId/comments
+ */
 
 const express = require('express');
 
-// 关键选项: { mergeParams: true } 允许此路由文件访问其父路由中的URL参数 (例如 /:postId)
+// { mergeParams: true } 允许此路由访问父路由 (:postId) 中的 URL 参数
 const router = express.Router({ mergeParams: true });
 
 const { getCommentsForPost, createComment } = require('../controllers/commentController');
 const { protect } = require('../middleware/authMiddleware');
 
-// 此处的 '/' 实际上是相对于 /api/blog/:postId/comments 的
+// GET /api/blog/:postId/comments - 获取文章的所有评论 (公开)
+// POST /api/blog/:postId/comments - 为文章添加评论 (需要登录)
 router.route('/')
     .get(getCommentsForPost)
     .post(protect, createComment);

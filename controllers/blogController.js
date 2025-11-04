@@ -1,37 +1,57 @@
-const asyncHandler = require('express-async-handler');
-const BlogPost = require('../models/blogPostModel'); // 确保路径正确
+/**
+ * @file blogController.js
+ * @description 博客文章相关的控制器函数，处理所有与博客文章相关的业务逻辑。
+ */
 
-// @desc    获取所有博客文章
-// @route   GET /api/blog
-// @access  Public
+const asyncHandler = require('express-async-handler');
+const BlogPost = require('../models/blogPostModel');
+
+/**
+ * @description 获取所有博客文章列表
+ * @route GET /api/blog
+ * @access Public
+ * @param {import('express').Request} req Express 请求对象
+ * @param {import('express').Response} res Express 响应对象
+ */
 const getBlogPosts = asyncHandler(async (req, res) => {
+  // 查找所有文章，并填充作者信息（仅用户名），按创建时间降序排序
   const posts = await BlogPost.find({}).populate('author', 'username').sort({ createdAt: -1 });
   res.status(200).json(posts);
 });
 
-// @desc    创建新的博客文章
-// @route   POST /api/blog
-// @access  Protected/Admin
+/**
+ * @description 创建一篇新的博客文章
+ * @route POST /api/blog
+ * @access Private/Admin
+ * @param {import('express').Request} req Express 请求对象
+ * @param {import('express').Response} res Express 响应对象
+ */
 const createBlogPost = asyncHandler(async (req, res) => {
   const { title, content } = req.body;
 
+  // 数据验证
   if (!title || !content) {
     res.status(400);
     throw new Error('标题和内容不能为空');
   }
 
+  // 创建新文章，作者 ID 来自于 authMiddleware 附加到 req.user 的信息
   const post = await BlogPost.create({
     title,
     content,
-    author: req.user._id, // req.user 来自于 authMiddleware
+    author: req.user._id,
   });
 
   res.status(201).json(post);
 });
 
-// @desc    获取单篇博客文章
-// @route   GET /api/blog/:id
-// @access  Public
+/**
+ * @description 根据 ID 获取单篇博客文章
+ * @route GET /api/blog/:id
+ * @access Public
+ * @param {import('express').Request} req Express 请求对象
+ * @param {import('express').Response} res Express 响应对象
+ */
 const getBlogPostById = asyncHandler(async (req, res) => {
   const post = await BlogPost.findById(req.params.id).populate('author', 'username');
 
@@ -43,9 +63,13 @@ const getBlogPostById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    更新一篇博客文章
-// @route   PUT /api/blog/:id
-// @access  Protected/Admin
+/**
+ * @description 更新一篇博客文章
+ * @route PUT /api/blog/:id
+ * @access Private/Admin
+ * @param {import('express').Request} req Express 请求对象
+ * @param {import('express').Response} res Express 响应对象
+ */
 const updateBlogPost = asyncHandler(async (req, res) => {
   const { title, content } = req.body;
   const post = await BlogPost.findById(req.params.id);
@@ -55,15 +79,16 @@ const updateBlogPost = asyncHandler(async (req, res) => {
     throw new Error('文章未找到');
   }
 
-  // 授权检查：当前用户必须是文章作者或管理员
+  // 授权检查：确保当前用户是文章作者或管理员
   const isAdmin = req.user.role === 'admin';
   const isAuthor = post.author.toString() === req.user._id.toString();
 
   if (!isAdmin && !isAuthor) {
-    res.status(403); // 403 Forbidden - 已知身份，但无权限
+    res.status(403); // 403 Forbidden - 用户已知，但无权限
     throw new Error('用户无权限更新此文章');
   }
 
+  // 更新字段
   post.title = title || post.title;
   post.content = content || post.content;
 
@@ -71,9 +96,13 @@ const updateBlogPost = asyncHandler(async (req, res) => {
   res.status(200).json(updatedPost);
 });
 
-// @desc    删除一篇博客文章
-// @route   DELETE /api/blog/:id
-// @access  Protected/Admin
+/**
+ * @description 删除一篇博客文章
+ * @route DELETE /api/blog/:id
+ * @access Private/Admin
+ * @param {import('express').Request} req Express 请求对象
+ * @param {import('express').Response} res Express 响应对象
+ */
 const deleteBlogPost = asyncHandler(async (req, res) => {
   const post = await BlogPost.findById(req.params.id);
 
@@ -82,15 +111,16 @@ const deleteBlogPost = asyncHandler(async (req, res) => {
     throw new Error('文章未找到');
   }
 
-  // 授权检查：当前用户必须是文章作者或管理员
+  // 授权检查：确保当前用户是文章作者或管理员
   const isAdmin = req.user.role === 'admin';
   const isAuthor = post.author.toString() === req.user._id.toString();
 
   if (!isAdmin && !isAuthor) {
-    res.status(403); // 403 Forbidden - 已知身份，但无权限
+    res.status(403); // 403 Forbidden
     throw new Error('用户无权限删除此文章');
   }
 
+  // Mongoose 5.x+ 推荐使用 deleteOne() 或 deleteMany()
   await post.deleteOne();
 
   res.status(200).json({ message: '文章已成功删除' });

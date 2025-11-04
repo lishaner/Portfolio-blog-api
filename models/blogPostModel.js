@@ -1,33 +1,43 @@
-// models/blogPostModel.js
+/**
+ * @file blogPostModel.js
+ * @description 定义博客文章 (BlogPost) 的 Mongoose Schema 和 Model。
+ */
 
 const mongoose = require('mongoose');
 
+// 定义 BlogPost 的数据结构
 const blogPostSchema = new mongoose.Schema({
+    // 文章标题
     title: {
         type: String,
-        required: [true, 'Please add a title']
+        required: [true, '标题为必填项']
     },
+    // 文章内容
     content: {
         type: String,
-        required: [true, 'Please add content']
+        required: [true, '内容为必填项']
     },
+    // 文章作者，关联到 User 模型
     author: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId, // 存储用户的 ObjectId
         required: true,
-        ref: 'User'
+        ref: 'User' // 引用 'User' 模型，方便使用 populate
     }
 }, {
+    // 自动添加 createdAt 和 updatedAt 字段
     timestamps: true
 });
 
-// 新增部分：Mongoose 的 'pre' 中间件
-// 在 'remove' 事件 (即删除一篇博客文章) 发生前执行此函数
-blogPostSchema.pre('remove', async function(next) {
-    // 'this' 关键字指向即将被删除的博客文章文档
-    // 'this.model('Comment')' 可以让我们在这里访问到 Comment 模型
+// 在删除博客文章之前执行的中间件 (pre-hook)
+// 用于级联删除与该文章相关的所有评论
+blogPostSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
+    console.log(`正在删除文章 ${this._id} 的所有相关评论...`);
+    // 'this' 指向即将被删除的文档
+    // 使用 this.model('Comment') 访问 Comment 模型来删除相关评论
     await this.model('Comment').deleteMany({ post: this._id });
-    // next() 函数表示中间件逻辑执行完毕，可以继续执行原生的 'remove' 操作了
-    next();
+    next(); // 继续执行删除操作
 });
 
+
+// 创建并导出 BlogPost 模型
 module.exports = mongoose.model('BlogPost', blogPostSchema);
