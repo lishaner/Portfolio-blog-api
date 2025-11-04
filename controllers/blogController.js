@@ -35,14 +35,20 @@ const createBlogPost = asyncHandler(async (req, res) => {
     throw new Error('标题和内容不能为空');
   }
 
-  // 创建新文章，作者 ID 来自于 authMiddleware 附加到 req.user 的信息
+  // --- 这里是唯一的修改之处 ---
+  // 步骤 1: 创建新文章，作者 ID 来自于 authMiddleware 附加到 req.user 的信息
   const post = await BlogPost.create({
     title,
     content,
     author: req.user._id,
   });
 
-  res.status(201).json(post);
+  // 步骤 2: 查找刚刚创建的文章，并填充作者信息，以便立即返回给前端
+  const populatedPost = await BlogPost.findById(post._id).populate('author', 'username');
+
+  // 步骤 3: 将包含作者信息的完整文章对象返回给前端
+  res.status(201).json(populatedPost);
+  // --- 修改结束 ---
 });
 
 /**
